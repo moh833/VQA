@@ -1,128 +1,91 @@
+import sys
 import numpy as np
 import pandas as pd
-from collections import defaultdict
-import operator
-import sys
-from nltk import word_tokenize
-import embedding as ebd
-from keras.preprocessing.sequence import pad_sequences
 from scipy import io
-import os
+from keras.preprocessing.sequence import pad_sequences
+from nltk.tokenize import word_tokenize
+import embedding as ebd
 
-# dataset = ''
 
-# def set_dataset(dataset):
-# 	global dataset
-# 	dataset = dataset_name
-
-def get_top_answers(dataset):
-    data_path = f'processed_data/{dataset}/train'
-    df = pd.read_pickle(data_path)
-    # list of lists where each list contains the single answer
-    answers = df[['answer']].values.tolist()
+def get_top_answers(num_answers, train, val=np.array([])):
+	counts = {}
+	answers = train['answer'].values.tolist()
+	if val.size != 0:
+		answers += val['answer'].values.tolist()
+	for ans in answers:
+		counts[ans.lower()] = counts.get(ans, 0) + 1
+	cw = sorted([(count,w) for w,count in counts.items()], reverse=True)
+	print('top answer and their counts:')    
+	print('\n'.join(map(str,cw[:20])))
     
-    freq = defaultdict(int)
-    for answer in answers:
-        # get the lower answer as a key and increase the occurrences by 1
-        freq[answer[0].lower()] += 1
+	top_answers = [c[1] for c in cw[:num_answers]]
 
-    # sort from the most occurrences -list of (answer, occurrences) pairs-
-    top_answers_occ = sorted(freq.items(),key=operator.itemgetter(1),reverse=True)[0:1000]
-    # list of answers sorted
-    top_answers = [answer_occ[0] for answer_occ in top_answers_occ]
-    return top_answers
-
-
-def save_top_answers(dataset):
-	top_answers = get_top_answers(dataset)
-	if not os.path.exists('top_answers'):
-		os.makedirs('top_answers')
-	with open(f'top_answers/{dataset}_top_answers.txt', 'w') as file:
-		file.write('\n'.join(top_answers))
-
-def load_top_answers(dataset):
-	with open(f'top_answers/{dataset}_top_answers.txt', 'r') as file:
-		top_answers = [line.strip() for line in file]
 	return top_answers
 
 
-def answers_to_onehot(dataset):
-	# new
-	save_top_answers(dataset)
-	top_answers = get_top_answers(dataset)
-    # dictionary of (answer, onehot) values
-	answer_to_onehot = {}
-	for i, answer in enumerate(top_answers):
-		onehot = np.zeros(1001)
-		onehot[i] = 1.0
-		answer_to_onehot[answer] = onehot
-	return answer_to_onehot
+def filter_questions(data, atoi):
+    answers = data['answer'].values.tolist()
+    indices = []
+    for i, ans in enumerate(answers):
+        if atoi.get(ans, len(atoi)+1) != len(atoi)+1:
+            indices.append(i)
 
-# answer_to_onehot_dict = answers_to_onehot()
+    new_data = data.iloc[indices]
+    print('questions number reduced from %d to %d '%(len(data.index), len(new_data.index)))
+    return new_data
 
-def get_answers_matrix(dataset, split):
-	answer_to_onehot_dict = answers_to_onehot(dataset)
-	try:
-		data_path = f'processed_data/{dataset}/{split}'
-	except OSError as e:
-		print('Invalid split!')
-		sys.exit()
+def questions_matrix(data):
 	
-	df = pd.read_pickle(data_path)
-	# list of lists where each list contains the single answer
-	answers = df[['answer']].values.tolist()
-	# (data_size, 1001)
-	answer_matrix = np.zeros((len(answers), 1001))
-
-	default_onehot = np.zeros(1001)
-	default_onehot[1000] = 1.0
-	
-	for i, answer in enumerate(answers):
-		answer_matrix[i] = answer_to_onehot_dict.get(answer[0].lower(), default_onehot)
-	
-	return answer_matrix
-
-
-def get_questions_matrix(dataset, split):
-	try:
-		data_path = f'processed_data/{dataset}/{split}'
-	except OSError as e:
-		print('Invalid split!')
-		sys.exit()
-	
-	df = pd.read_pickle(data_path)
-	questions = df[['question']].values.tolist()
+	questions = data['question'].values.tolist()
 	word_idx = ebd.load_idx()
 	seq_list = []
 	
-	for question in questions:
+	for q in questions:
 		# list of words
-		words = word_tokenize(question[0].lower())
+		words = word_tokenize(q.lower())
 		seq = []
 		for word in words:
-			# list of indecies of the words - 0 for unknown
-			seq.append(word_idx.get(word,0))
-		# list of lists (each one has the indeces of the words in a question)
+			# list of indices of the words - 0 for unknown
+			seq.append(word_idx.get(word, 0))
+		# list of lists (each one has the indices of the words in a question)
 		seq_list.append(seq)
 	# padding zeros in the beginning of each sequence so they ending up with the same length and stack them as a matrix
 	question_matrix = pad_sequences(seq_list)
 	
-	# (248349, 25) (questions length, max question length)
+	# (questions length, max question length)
 	return question_matrix
 
 
-def get_coco_features(dataset, split):
-	try:
-		data_path = f'processed_data/{dataset}/{split}'
-	except OSError as e:
-		print('Invalid split!')
-		sys.exit()
+def answer_to_onehot(top_answers):
+    # dictionary of (answer, onehot) values
+	answer_to_onehot = {}
+	num_answers = len(top_answers)
+	for i, ans in enumerate(top_answers):
+		onehot = np.zeros(num_answers)
+		onehot[i] = 1.0
+		answer_to_onehot[ans] = onehot
+	return answer_to_onehot
+
+
+def answers_matrix(data, answer_to_onehot_dict):
+	
+	# list of lists where each list contains the single answer
+	answers = data['answer'].values.tolist()
+	# (data_size, num_answers)
+	answers_matrix = np.zeros((len(answers), len(answer_to_onehot_dict)))
+	
+	for i, ans in enumerate(answers):
+		answers_matrix[i] = answer_to_onehot_dict[ans.lower()]
+	
+	return answers_matrix
+
+def get_coco_features(data):
 
 	id_map_path = 'coco_features/coco_vgg_IDMap.txt'
 	features_path = 'coco_features/vgg_feats.mat'
 
 	# image ids
-	img_labels = pd.read_pickle(data_path)[['image_id']].values.tolist()
+	img_labels = data[['image_id']].values.tolist()
 	# map image id to index in the matrix
 	img_ids = open(id_map_path).read().splitlines()
 	# load a (4096, 123287) matlab matrix (features, images) in ['feats']
@@ -147,8 +110,35 @@ def get_coco_features(dataset, split):
 
 	return image_matrix
 
+def main(params):
 
-if __name__ == '__main__':
-	question_matrix = get_questions_matrix('train')
-	print(question_matrix.shape)
+    dataset = 'VQA'
+    data_path = f'processed_data/{dataset}'
 
+    train_data = pd.read_pickle(data_path + '/train')
+    val_data = pd.read_pickle(data_path + '/val')
+
+    num_answers = 1000
+    # get top answers
+    top_answers = get_top_answers(num_answers, train_data, val_data)
+    atoi = {w:i for i,w in enumerate(top_answers)}
+    # itoa = {i+1:w for i,w in enumerate(top_answers)}
+
+    # filter question, which isn't in the top answers.
+    filtered_train = filter_questions(train_data, atoi)
+
+    filtered_val = filter_questions(val_data, atoi)
+
+    # tokenize and preprocess training questions
+    questions_train = questions_matrix(filtered_train)
+    # tokenize and preprocess testing questions
+    questions_val = questions_matrix(filtered_val)
+
+
+    answer_to_onehot_dict = answer_to_onehot(top_answers)
+    answers_train = answers_matrix(filtered_train, answer_to_onehot_dict)
+    answers_val = answers_matrix(filtered_val, answer_to_onehot_dict)
+
+
+if __name__ == "__main__":
+    main()
