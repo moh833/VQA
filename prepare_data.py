@@ -4,7 +4,8 @@ import pandas as pd
 from scipy import io
 from keras.preprocessing.sequence import pad_sequences
 from nltk.tokenize import word_tokenize
-import embedding as ebd
+import embedding
+import os
 
 
 def get_top_answers(num_answers, train, val=np.array([])):
@@ -16,7 +17,7 @@ def get_top_answers(num_answers, train, val=np.array([])):
 		counts[ans.lower()] = counts.get(ans, 0) + 1
 	cw = sorted([(count,w) for w,count in counts.items()], reverse=True)
 	print('top answer and their counts:')    
-	print('\n'.join(map(str,cw[:20])))
+	print('\n'.join(map(str,cw[:10])))
     
 	top_answers = [c[1] for c in cw[:num_answers]]
 
@@ -34,10 +35,33 @@ def filter_questions(data, atoi):
     print('questions number reduced from %d to %d '%(len(data.index), len(new_data.index)))
     return new_data
 
-def questions_matrix(data):
+
+def create_vocab(train, val=np.array([]), glove_path=None, dim=None):
+	counts = {}
+	questions = train['question'].values.tolist()
+	if val.size != 0:
+		questions += val['question'].values.tolist()
+	for q in questions:
+		words = word_tokenize(q.lower())
+		for w in words:
+			counts[w] = counts.get(w, 0) + 1
+	cw = sorted([(count,w) for w,count in counts.items()], reverse=True)
+	print(f'vocab = {len(cw)} words')
+	print('top words in questions and their counts:')    
+	print('\n'.join(map(str,cw[:10])))
+    
+	vocab = [c[1] for c in cw]
+
+	word_idx = {w:i+1 for i, w in enumerate(vocab)}
+
+	if glove_path and dim:
+		embedding.create(glove_path, dim, word_idx)
+
+	return word_idx
+
+def questions_matrix(data, word_idx):
 	
 	questions = data['question'].values.tolist()
-	word_idx = ebd.load_idx()
 	seq_list = []
 	
 	for q in questions:
@@ -110,34 +134,44 @@ def get_coco_features(data):
 
 	return image_matrix
 
+
+
 def main(params):
 
-    dataset = 'VQA'
-    data_path = f'processed_data/{dataset}'
+	dataset = 'VQA'
+	data_path = f'processed_data/{dataset}'
+	glove_path = 'embeddings/glove.6B.300d.txt'
+	glove_dim = 300
 
-    train_data = pd.read_pickle(data_path + '/train')
-    val_data = pd.read_pickle(data_path + '/val')
+	train_data = pd.read_pickle(data_path + '/train')
+	val_data = pd.read_pickle(data_path + '/val')
 
-    num_answers = 1000
-    # get top answers
-    top_answers = get_top_answers(num_answers, train_data, val_data)
-    atoi = {w:i for i,w in enumerate(top_answers)}
-    # itoa = {i+1:w for i,w in enumerate(top_answers)}
+	num_answers = 1000
+	# get top answers
+	top_answers = get_top_answers(num_answers, train_data, val_data)
+	atoi = {w:i for i,w in enumerate(top_answers)}
+	# itoa = {i+1:w for i,w in enumerate(top_answers)}
 
-    # filter question, which isn't in the top answers.
-    filtered_train = filter_questions(train_data, atoi)
+	if not os.path.exists('top_answers'):
+		os.makedirs('top_answers')
+	with open(f'top_answers/{dataset}_top_answers.txt', 'w') as file:
+		file.write('\n'.join(top_answers))
 
-    filtered_val = filter_questions(val_data, atoi)
+	# filter question, which isn't in the top answers.
+	filtered_train = filter_questions(train_data, atoi)
+	filtered_val = filter_questions(val_data, atoi)
 
-    # tokenize and preprocess training questions
-    questions_train = questions_matrix(filtered_train)
-    # tokenize and preprocess testing questions
-    questions_val = questions_matrix(filtered_val)
+	word_idx = create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
+
+	# tokenize and preprocess training questions
+	questions_train = questions_matrix(filtered_train, word_idx)
+	# tokenize and preprocess testing questions
+	questions_val = questions_matrix(filtered_val, word_idx)
 
 
-    answer_to_onehot_dict = answer_to_onehot(top_answers)
-    answers_train = answers_matrix(filtered_train, answer_to_onehot_dict)
-    answers_val = answers_matrix(filtered_val, answer_to_onehot_dict)
+	answer_to_onehot_dict = answer_to_onehot(top_answers)
+	answers_train = answers_matrix(filtered_train, answer_to_onehot_dict)
+	answers_val = answers_matrix(filtered_val, answer_to_onehot_dict)
 
 
 if __name__ == "__main__":
