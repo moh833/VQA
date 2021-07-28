@@ -33,5 +33,5 @@ if __name__ == '__main__':
     if not os.path.exists(processed_path):
         os.makedirs(processed_path)
     train.to_pickle(processed_path + '/train') 
-    test.to_pickle(processed_path + '/test') 
+    test.to_pickle(processed_path + '/val') 
     print('saved to', processed_path)

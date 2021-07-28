@@ -36,7 +36,7 @@ def filter_questions(data, atoi):
     return new_data
 
 
-def create_vocab(train, val=np.array([]), glove_path=None, dim=None):
+def create_vocab(train, val=np.array([]), glove_path=None, dim=None, threshold=0):
 	counts = {}
 	questions = train['question'].values.tolist()
 	if val.size != 0:
@@ -46,18 +46,19 @@ def create_vocab(train, val=np.array([]), glove_path=None, dim=None):
 		for w in words:
 			counts[w] = counts.get(w, 0) + 1
 	cw = sorted([(count,w) for w,count in counts.items()], reverse=True)
-	print(f'vocab = {len(cw)} words')
+    
+	vocab = [c[1] for c in cw if c[0] > threshold]
+	print(f'vocab = {len(vocab)} words')
 	print('top words in questions and their counts:')    
 	print('\n'.join(map(str,cw[:10])))
-    
-	vocab = [c[1] for c in cw]
 
 	word_idx = {w:i+1 for i, w in enumerate(vocab)}
 
+	embedding_matrix = np.array([])
 	if glove_path and dim:
-		embedding.create(glove_path, dim, word_idx)
+		embedding_matrix = embedding.create(glove_path, dim, word_idx)
 
-	return word_idx
+	return word_idx, embedding_matrix
 
 def questions_matrix(data, word_idx):
 	
@@ -161,7 +162,7 @@ def main(params):
 	filtered_train = filter_questions(train_data, atoi)
 	filtered_val = filter_questions(val_data, atoi)
 
-	word_idx = create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
+	word_idx, embedding_matrix = create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
 
 	# tokenize and preprocess training questions
 	questions_train = questions_matrix(filtered_train, word_idx)

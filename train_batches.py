@@ -86,7 +86,19 @@ def main():
     filtered_train = prepare_data.filter_questions(train_data, atoi)
     filtered_val = prepare_data.filter_questions(val_data, atoi)
 
-    word_idx = prepare_data.create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
+    # create new word_idx and embedding_matrix from the words in the data
+    word_idx, embedding_matrix = prepare_data.create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
+    # word_idx, embedding_matrix = embedding.create_from_top_words(glove_path, glove_dim, 100000)
+
+    ## save the word_idx and the embedding_matrix
+    if not os.path.exists('embeddings/'):
+        os.makedirs('embeddings/')
+    embedding.save_idx(word_idx, 'embeddings/' + f'/word_idx_{dataset}')
+    # embedding.save_embedding(word_idx, 'embeddings/' + f'/embedding_matrix_{dataset}')
+
+    ## load a pre-existing word_idx and the embedding_matrix
+    # word_idx = embedding.load_idx('embeddings/' + f'/word_idx_{dataset}')
+    # embedding_matrix = embedding.load_embedding('embeddings/' + f'/embedding_matrix_{dataset}')
 
     print('Loading questions ...')
     # tokenization and preprocessing training question
@@ -110,7 +122,7 @@ def main():
     del questions_train
     del answers_train
 
-    # tokenization and preprocessing for validation question
+    # tokenization and preprocessing for validation questions
     questions_val = prepare_data.questions_matrix(filtered_val, word_idx)
     answers_val = prepare_data.answers_matrix(filtered_val, answer_to_onehot_dict)
     img_features_val = prepare_data.get_coco_features(filtered_val)
@@ -124,7 +136,6 @@ def main():
 
     print('Creating model ...')
 
-    embedding_matrix = embedding.load()
     if model_name == 'lstm_qi':
         model = models.lstm_qi(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
     elif model_name == 'lstm_qi_2':

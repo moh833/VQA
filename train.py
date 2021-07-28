@@ -19,7 +19,7 @@ def main():
     glove_dim = 300
 
     train_data = pd.read_pickle(data_path + '/train')
-    val_data = pd.read_pickle(data_path + '/test')
+    val_data = pd.read_pickle(data_path + '/val')
 
     max_answers = 1000
     # get top answers
@@ -36,7 +36,19 @@ def main():
     filtered_train = prepare_data.filter_questions(train_data, atoi)
     filtered_val = prepare_data.filter_questions(val_data, atoi)
 
-    word_idx = prepare_data.create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
+    # create new word_idx and embedding_matrix from the words in the data
+    word_idx, embedding_matrix = prepare_data.create_vocab(filtered_train, filtered_val, glove_path, glove_dim)
+    # word_idx, embedding_matrix = embedding.create_from_top_words(glove_path, glove_dim, 100000)
+
+    # save the word_idx and the embedding_matrix
+    if not os.path.exists('embeddings/'):
+        os.makedirs('embeddings/')
+    embedding.save_idx(word_idx, 'embeddings/' + f'word_idx_{dataset}')
+    # embedding.save_embedding(embedding_matrix, 'embeddings/' + f'embedding_matrix_{dataset}')
+
+    ## load a pre-existing word_idx and the embedding_matrix
+    # word_idx = embedding.load_idx('embeddings/' + f'word_idx_{dataset}')
+    # embedding_matrix = embedding.load_embedding('embeddings/' + f'embedding_matrix_{dataset}')
 
     print('Loading questions ...')
     # tokenize and preprocess training questions
@@ -60,7 +72,6 @@ def main():
 
     print('Creating model ...')
 	
-    embedding_matrix = embedding.load()
     if model_name == 'lstm_qi':
         model = models.lstm_qi(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
     elif model_name == 'lstm_qi_2':
