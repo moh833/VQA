@@ -5,12 +5,12 @@ import models
 import sys
 import os
 import embedding
+from keras.utils.vis_utils import plot_model
 
 def main():
 
-    num_epochs = 10 # 25
-    batch_size = 128 # 200
-    # model_name = 'vis_lstm'
+    num_epochs = 10 
+    batch_size = 128 
     model_name = 'lstm_qi'
     dataset = 'COCO-QA'
 
@@ -65,6 +65,7 @@ def main():
         model = models.lstm_qi(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
     elif model_name == 'lstm_qi_2':
         model = models.lstm_qi_2(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
+    
     X_train = [img_features_train, questions_train]
     X_val = [img_features_val, questions_val]
     model.summary()
@@ -73,6 +74,13 @@ def main():
     print("y_train", answers_train.shape)
     print("X_val", X_val[0].shape, X_val[1].shape)
     print("y_val", answers_val.shape)
+
+    def print_fn(s):
+        with open(f'{model_name}_{dataset}.txt','a') as f:
+            print(s, file=f)
+    model.summary(print_fn=print_fn)
+    plot_model(model, to_file=f'{model_name}_{dataset}.png', show_shapes=True, show_layer_names=True)
+    
     model.compile(optimizer='adam',
         loss='categorical_crossentropy',
         metrics=['accuracy'])
