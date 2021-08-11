@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import pandas as pd
 from scipy import io
@@ -56,7 +55,8 @@ def create_vocab(train, val=np.array([]), glove_path=None, dim=None, threshold=0
 
 	embedding_matrix = np.array([])
 	if glove_path and dim:
-		embedding_matrix = embedding.create(glove_path, dim, word_idx)
+		if os.path.isfile(glove_path):
+			embedding_matrix = embedding.create(glove_path, dim, word_idx)
 
 	return word_idx, embedding_matrix
 
@@ -137,9 +137,9 @@ def get_coco_features(data):
 
 
 
-def main(params):
+def main():
 
-	dataset = 'VQA'
+	dataset = 'COCO-QA'
 	data_path = f'processed_data/{dataset}'
 	glove_path = 'embeddings/glove.6B.300d.txt'
 	glove_dim = 300

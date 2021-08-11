@@ -1,1 +1,5 @@
 data/
+__pycache__/
+coco_features/
+embeddings/
+weights/

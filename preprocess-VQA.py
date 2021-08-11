@@ -7,7 +7,7 @@ def preprocess(data_path, split):
     assert(split in ['train', 'val'])
     
     anno = json.load(open(data_path + f'/Annotations/mscoco_{split}2014_annotations.json', 'r'))
-    ques = json.load(open(data_path + f'/Questions/MultipleChoice_mscoco_{split}2014_questions.json', 'r'))
+    ques = json.load(open(data_path + f'/Questions/OpenEnded_mscoco_{split}2014_questions.json', 'r'))
     
     data_len = len(anno['annotations'])
     answers = []
@@ -28,12 +28,12 @@ def preprocess(data_path, split):
 
 
 if __name__ == '__main__':
-    data_path = 'data/VQA'
+    data_path = 'data/VQA_1'
     print('processing...')
     train = preprocess(data_path, 'train')
     val = preprocess(data_path, 'val')
 
-    processed_path = 'processed_data/VQA'
+    processed_path = 'processed_data/VQA_1'
     if not os.path.exists(processed_path):
         os.makedirs(processed_path)
     train.to_pickle(processed_path + '/train') 

@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import prepare_data
 import models
-import sys
 import os
 import math
 import embedding

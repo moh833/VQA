@@ -9,7 +9,7 @@ from keras.utils.vis_utils import plot_model
 
 def main():
 
-    num_epochs = 10 
+    num_epochs = 10
     batch_size = 128 
     model_name = 'lstm_qi'
     dataset = 'COCO-QA'
