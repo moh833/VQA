@@ -78,3 +78,28 @@ def lstm_qi_2(num_classes, vocab_size, embedding_matrix=np.array([]), embedding_
 	main_model = Model([image_in, embedding_in], out)
 
 	return main_model
+
+
+def bow_model(num_classes, vocab_size):
+	lang_model = Sequential()
+	lang_model.add(Dense(
+	units=1024,
+	input_dim=vocab_size,
+	activation='linear'))
+
+	image_model = Sequential()
+	image_model.add(Dense(
+	units=1024,
+	input_dim=4096,
+	activation='linear'))
+
+	x=concatenate(
+	[image_model.output,lang_model.output]
+	)
+	x=Dropout(0.5)(x)
+	x = Dense(2048,activation="relu")(x)
+	x = Dense(1024,activation='relu')(x)
+	x=Dense(num_classes,activation='softmax')(x)
+	main_model=Model([image_model.input,lang_model.input],x)
+
+	return main_model
