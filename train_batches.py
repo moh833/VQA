@@ -7,6 +7,7 @@ import math
 import embedding
 import glob
 from keras.utils.vis_utils import plot_model
+import argparse
 
 
 
@@ -57,11 +58,19 @@ def iterate_minibatches(minibatchsize, split, num_saved_batches, shuffle=True):
                 
 def main():
 
-    num_epochs = 10 
-    batch_size = 128 
-    saved_batches_size = 20480 # 5120
-    model_name = 'lstm_qi_2'
-    dataset = 'VQA_1'
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-m', '--model_name', type=str, required=True, choices=['vis_blstm', 'lstm_qi', 'lstm_qi_2'])
+    parser.add_argument('-d', '--dataset', type=str, required=True, choices=['COCO-QA', 'VQA_1'], help="The dataset to train on")
+    parser.add_argument('-cs', '--chunk_size', type=int, default=20480, help='Split large data into chunks of size chunk_size saved on disk')
+    parser.add_argument('-ep', '--epochs', type=int, default=10)
+    parser.add_argument('-bz', '--batch_size', type=int, default=128)
+    args = parser.parse_args()
+
+    num_epochs = args.epochs
+    batch_size = args.batch_size
+    saved_batches_size = args.chunk_size
+    model_name = args.model_name
+    dataset = args.dataset
 
     data_path = f'processed_data/{dataset}'
     glove_path = 'embeddings/glove.6B.300d.txt'
@@ -139,6 +148,8 @@ def main():
         model = models.lstm_qi(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
     elif model_name == 'lstm_qi_2':
         model = models.lstm_qi_2(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
+    elif model_name == 'vis_blstm':
+        model = models.vis_blstm(num_classes=len(top_answers), vocab_size=len(word_idx)+1, embedding_matrix=embedding_matrix)
     model.summary()
 
     def print_fn(s):

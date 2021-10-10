@@ -3,6 +3,7 @@ import pandas as pd
 import prepare_data
 import models
 import os
+import argparse
 import math
 import embedding
 # import errno, os, stat, shutil
@@ -97,11 +98,19 @@ def make_matrix(all_data,qw2i):
 
 def main():
 
-    num_epochs = 10 
-    batch_size = 128 
-    saved_batches_size = 20480 # 5120
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, required=True, choices=['COCO-QA', 'VQA_1'], help="The dataset to train on")
+    parser.add_argument('-ep', '--epochs', type=int, default=10)
+    parser.add_argument('-cs', '--chunk_size', type=int, default=20480, help='Split large data into chunks of size chunk_size saved on disk')
+    parser.add_argument('-bz', '--batch_size', type=int, default=128)
+    args = parser.parse_args()
+
+
+    num_epochs = args.epochs
+    batch_size = args.batch_size
+    saved_batches_size = args.chunk_size
+    dataset = args.dataset
     model_name = 'bow'
-    dataset = 'VQA_1'
 
     data_path = f'processed_data/{dataset}'
 

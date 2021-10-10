@@ -105,6 +105,42 @@ def bow_model(num_classes, vocab_size):
 	return main_model
 
 
+def vis_blstm(num_classes, vocab_size, embedding_matrix=np.array([]), embedding_trainable=False):
+	embedding_in = Input(shape=(None,))
+	embedding_dim = 300
+
+	if embedding_matrix.size != 0:
+		print('Loaded pre-trained embedding')
+		embedding_dim = embedding_matrix.shape[1]
+		embedding_out = Embedding(
+			input_dim=embedding_matrix.shape[0],
+			output_dim=embedding_matrix.shape[1],
+			weights = [embedding_matrix],
+			trainable = embedding_trainable)(embedding_in)
+	else:	
+		embedding_out = Embedding(
+			input_dim=vocab_size,
+			output_dim=embedding_dim)(embedding_in)
+
+
+	image_model = Sequential()
+	image_model.add(Dense(
+		units=embedding_dim,
+		input_dim=4096,
+		activation='linear'))
+	image_model.add(Reshape((1,embedding_dim)))
+
+	x=concatenate(
+	[image_model.output,embedding_out], axis=1	
+	)
+	x=Bidirectional(LSTM(500))(x)
+	x=Dropout(0.5)(x)
+	x=Dense(num_classes,activation='softmax')(x)
+	main_model=Model([image_model.input,embedding_in],x)
+
+	return main_model
+
+
 def VGG_16(weights_path=None):
 	model = Sequential()
 	model.add(Conv2D(input_shape=(224,224,3),filters=64,kernel_size=(3,3),padding="same", activation="relu"))

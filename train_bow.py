@@ -7,6 +7,7 @@ import embedding
 from nltk.tokenize import word_tokenize
 import nltk
 from keras.utils.vis_utils import plot_model
+import argparse
 
 def create_vocab(train, threshold = 1, val=np.array([])):
     counts = {}
@@ -44,10 +45,16 @@ def make_matrix(all_data,qw2i):
 
 def main():
 
-    num_epochs = 10
-    batch_size = 128 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--dataset', type=str, required=True, choices=['COCO-QA', 'VQA_1'], help="The dataset to train on")
+    parser.add_argument('-ep', '--epochs', type=int, default=10)
+    parser.add_argument('-bz', '--batch_size', type=int, default=128)
+    args = parser.parse_args()
+
+    num_epochs = args.epochs
+    batch_size = args.batch_size
+    dataset = args.dataset
     model_name = 'bow'
-    dataset = 'COCO-QA'
 
     data_path = f'processed_data/{dataset}'
 
