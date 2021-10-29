@@ -78,3 +78,7 @@ python Evaluation/evaluate_VQA_1.py --model_name <model_name>
 ```
 * ```-m --model_name``` Name of the model [bow, vis_blstm, lstm_qi, lstm_qi_2]
 
+## Deployment
+
+#### See [APPs](https://github.com/moh833/VQA/tree/main/APPs)
+
