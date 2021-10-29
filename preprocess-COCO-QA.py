@@ -11,15 +11,17 @@ def file_to_array(file_path, dtype):
 
 def preprocess(data_path):
     img_ids = file_to_array(data_path + '/train/img_ids.txt', 'int64')
+    types = file_to_array(data_path + '/train/types.txt', 'int8')
     questions = file_to_array(data_path + '/train/questions.txt', 'str')
     answers = file_to_array(data_path + '/train/answers.txt', 'str')
-    d = {'image_id': img_ids, 'question': questions, 'answer': answers}
+    d = {'image_id': img_ids, 'type': types, 'question': questions, 'answer': answers}
     train = pd.DataFrame(data=d)
 
     img_ids = file_to_array(data_path + '/test/img_ids.txt', 'int64')
+    types = file_to_array(data_path + '/test/types.txt', 'int8')
     questions = file_to_array(data_path + '/test/questions.txt', 'str')
     answers = file_to_array(data_path + '/test/answers.txt', 'str')
-    d = {'image_id': img_ids, 'question': questions, 'answer': answers}
+    d = {'image_id': img_ids, 'type': types, 'question': questions, 'answer': answers}
     test = pd.DataFrame(data=d)
 
     return train, test

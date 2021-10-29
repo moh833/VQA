@@ -6,11 +6,11 @@ Trained on [VQA version 1](https://visualqa.org/vqa_v1_download.html) and [COCO-
 
 * All Models trained with a batch size of 128 and 10 epochs
 
-* For VQA dataset considered only the questions with 1000 most frequent answers which cover 86% of the data
+* For VQA dataset considered only the questions with the 1000 most frequent answers which cover 86% of the data
 
 * Used [GloVe](https://nlp.stanford.edu/projects/glove/) pre-trained word vectors glove.6b with 300D with frozen parameters during training
 
-* Evaluation on VQA dataset done using [VQA Evaluation](https://github.com/GT-Vision-Lab/VQA/tree/master/PythonEvaluationTools)
+* Evaluation on VQA dataset done using [VQA Evaluation](https://github.com/GT-Vision-Lab/VQA)
 
 ## Datasets
 
@@ -48,7 +48,7 @@ train_batches.py splits large data into chunks, and saves them to the hard disk,
 ```
 python train_batches.py --model_name <model_name> --dataset <dataset>
 ```
-* ```-m --model_name``` Name of the model [vis_lstm, lstm_qi, lstm_qi_2]
+* ```-m --model_name``` Name of the model [vis_blstm, lstm_qi, lstm_qi_2]
 
 * ```-d --dataset``` Name of the dataset [VQA_1, COCO-QA]
 
@@ -70,3 +70,11 @@ python predict_answer.py --image_path <image_path> --question <question>
 * ```-m --model_name``` Default lstm_qi_2
 
 * ```-d --dataset``` Default VQA_1
+
+## Evaluation
+
+```
+python Evaluation/evaluate_VQA_1.py --model_name <model_name>
+```
+* ```-m --model_name``` Name of the model [bow, vis_blstm, lstm_qi, lstm_qi_2]
+

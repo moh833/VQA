@@ -1,0 +1,2 @@
+### External Code [VQA Evaluation](https://github.com/GT-Vision-Lab/VQA)
+For VQA dataset evaluation done on the questions with the 1000 most frequent answers in the validation set which covers 86% of it
